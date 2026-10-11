@@ -1,0 +1,17 @@
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*
+.vscode/
+.idea/
+dist/
+node_modules/
+*.local
+
+# scratch / duplicate source art outside assets/
+Frame 1.svg
+пергамент-*.png
+рамка*.png
+фон.png
+шептун.png

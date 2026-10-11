@@ -1,0 +1,14 @@
+Sheptun (sheptun-stt)
+Copyright (c) 2026 Sheptun contributors
+
+This product bundles or dynamically loads third-party software and models.
+Their licenses apply in addition to the MIT license of this repository:
+
+- Hugging Face Transformers.js — Apache-2.0
+  https://github.com/huggingface/transformers.js
+- OpenAI Whisper model weights (via Xenova/Hugging Face ports) — see model cards
+- MLC WebLLM and hosted instruct models (Qwen, Llama, Phi, …) — see each model card
+- Lucide icons — ISC
+  https://github.com/lucide-icons/lucide
+
+Review upstream licenses before commercial redistribution of models or derivatives.
