@@ -1385,7 +1385,7 @@
 
     <section class="hero">
       <div class="hero-copy">
-        <h1 class="brand">
+        <h1 class="brand" data-i18n-html="brand">
           Ше<span class="p-wrap">п<i data-lucide="crown" class="crown" aria-hidden="true"></i></span>тун
         </h1>
         <p class="tagline" data-i18n="tagline">Шепни. Я запишу</p>
@@ -1421,7 +1421,7 @@
       </div>
 
       <div class="hero-visual">
-        <img class="hero-img" src="assets/hero.png" alt="Шептун" width="540" height="720" decoding="async">
+        <img class="hero-img" src="assets/hero.png" alt="Шептун" width="540" height="720" decoding="async" data-i18n-alt="brandAlt">
 
         <div class="scrap">
           <span><span data-i18n="scrap">Тс-с-с… Голос станет текстом.</span> <i data-lucide="crown" aria-hidden="true"></i></span>
@@ -1649,7 +1649,8 @@
     if (!widget || !how) return;
     pinWidgetCenter();
     how.style.marginTop = '0px';
-    const gap = 32;
+    /* desktop: ближе к персонажу (−80px к обычному gap 32) */
+    const gap = window.matchMedia('(max-width: 980px)').matches ? 32 : -48;
     const wBottom = widget.getBoundingClientRect().bottom;
     const howTop = how.getBoundingClientRect().top;
     how.style.marginTop = `${wBottom + gap - howTop}px`;
@@ -1669,6 +1670,9 @@
 
   const I18N = {
     ru: {
+      brand: 'Ше<span class="p-wrap">п<i data-lucide="crown" class="crown" aria-hidden="true"></i></span>тун',
+      brandAlt: 'Шептун',
+      brandTitle: 'Шептун · sheptun-stt',
       tagline: 'Шепни. Я запишу',
       f1t: 'Без регистрации', f1d: 'Просто открыл и пользуешься',
       f2t: 'Ваши данные в безопасности', f2d: 'Всё обрабатывается локально',
@@ -1723,6 +1727,9 @@
       alertMic: 'Нет доступа к микрофону: {0}',
     },
     en: {
+      brand: 'She<span class="p-wrap">p<i data-lucide="crown" class="crown" aria-hidden="true"></i></span>tun',
+      brandAlt: 'Sheptun',
+      brandTitle: 'Sheptun · sheptun-stt',
       tagline: 'Whisper it. I’ll write it down',
       f1t: 'No signup', f1d: 'Just open and use',
       f2t: 'Your data stays safe', f2d: 'Everything runs locally',
@@ -1804,6 +1811,11 @@
       if (v == null) return;
       el.innerHTML = v;
     });
+    document.querySelectorAll('[data-i18n-alt]').forEach((el) => {
+      const v = pack[el.dataset.i18nAlt];
+      if (v != null) el.setAttribute('alt', v);
+    });
+    if (pack.brandTitle) document.title = pack.brandTitle;
 
     /* синхрон кнопки, если не в loading/recording */
     const runBtnEl = document.getElementById('runBtn');
