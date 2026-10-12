@@ -14,8 +14,8 @@
 <meta property="og:locale:alternate" content="en_US">
 <meta property="og:title" content="Шептун — бесплатный транскрибатор речи в текст">
 <meta property="og:description" content="Шепни — я запишу. Транскрибация в браузере: без регистрации и рекламы. Стили текста и перевод на английский">
-<meta property="og:image" content="https://sheptun.vercel.app/assets/og.jpg">
-<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image" content="https://sheptun.vercel.app/assets/og.webp">
+<meta property="og:image:type" content="image/webp">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Sheptun — speech-to-text">
@@ -23,7 +23,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Шептун — бесплатный транскрибатор речи в текст">
 <meta name="twitter:description" content="Шепни — я запишу. Транскрибация в браузере: без регистрации и рекламы. Стили текста и перевод на английский">
-<meta name="twitter:image" content="https://sheptun.vercel.app/assets/og.jpg">
+<meta name="twitter:image" content="https://sheptun.vercel.app/assets/og.webp">
 
 <!-- file:// (скачанный HTML): ассеты с CDN — иначе без папки assets картинки не грузятся -->
 <script>
@@ -94,7 +94,7 @@
     background:
       linear-gradient(90deg, rgba(8,4,3,0.72) 0%, rgba(8,4,3,0.35) 42%, rgba(8,4,3,0.15) 70%, rgba(8,4,3,0.45) 100%),
       linear-gradient(180deg, rgba(8,4,3,0.25) 0%, transparent 30%, rgba(8,4,3,0.55) 100%),
-      url('assets/bg.png') center top / cover no-repeat;
+      url('assets/bg.webp') center top / cover no-repeat;
   }
 
   .stage-grain {
@@ -352,7 +352,7 @@
     width: 196px;
     aspect-ratio: 1.15;
     padding: 28px 22px 24px;
-    background: url('assets/parchment-note.png') center / 108% 108% no-repeat;
+    background: url('assets/parchment-note.webp') center / 108% 108% no-repeat;
     filter: drop-shadow(0 10px 22px rgba(0,0,0,0.5));
     transform: rotate(6deg);
     color: var(--ink);
@@ -939,7 +939,7 @@
     border-color: transparent;
     /* кромки ~фиксированы по высоте; середина fill тянется */
     border-width: 140px 40px 128px 40px;
-    border-image-source: url('assets/parchment-strip.png');
+    border-image-source: url('assets/parchment-strip.webp');
     border-image-slice: 240 56 220 56 fill;
     border-image-width: 140px 40px 128px 40px;
     border-image-repeat: stretch;
@@ -1059,7 +1059,7 @@
     border-style: solid;
     border-color: transparent;
     border-width: 150px 56px 140px 56px;
-    border-image-source: url('assets/parchment-bordered.png');
+    border-image-source: url('assets/parchment-bordered.webp');
     border-image-slice: 250 100 230 100 fill;
     border-image-width: 150px 56px 140px 56px;
     border-image-repeat: stretch;
@@ -1452,7 +1452,7 @@
       </div>
 
       <div class="hero-visual">
-        <img class="hero-img" src="assets/hero.png" alt="Шептун" width="540" height="720" decoding="async" data-i18n-alt="brandAlt">
+        <img class="hero-img" src="assets/hero.webp" alt="Шептун" width="540" height="720" decoding="async" data-i18n-alt="brandAlt">
 
         <div class="scrap">
           <span><span data-i18n="scrap">Тс-с-с… Голос станет текстом.</span> <i data-lucide="crown" aria-hidden="true"></i></span>
@@ -1529,7 +1529,7 @@
               <span data-i18n="run">Добыть текст</span>
             </button>
           </div>
-          <img class="widget-frame" src="assets/frame.png" alt="" width="1448" height="1086" decoding="async">
+          <img class="widget-frame" src="assets/frame.webp" alt="" width="1448" height="1086" decoding="async">
         </div>
       </div>
     </section>
@@ -2018,26 +2018,44 @@
     [/завершить\s+прямку/giu, 'завершить приёмку'],
     [/заверш\s+появляться/giu, 'завершить — появляется'],
     [new RegExp(`племенночастичн${W}`, 'giu'), 'принята частично'],
+    [new RegExp(`планеточастичн${W}`, 'giu'), 'принята частично'],
+    [/принято\s*частично/giu, 'принято частично'],
+    [/приняточастично/giu, 'принято частично'],
+    [new RegExp(`поставка\\s+успешного\\s+планет${W}`, 'giu'), 'поставка успешна'],
+    [new RegExp(`поставка\\s+планеточастичн${W}`, 'giu'), 'поставка принята частично'],
+    [/честично/giu, 'частично'],
 
-    /* заголовки */
+    /* заголовки / колонки / наименования */
     [new RegExp(`${UB}подзаколол${W}${UE}`, 'giu'), 'подзаголовок'],
+    [new RegExp(`подыголовк${W}`, 'giu'), 'подзаголовке'],
     [new RegExp(`${UB}заколовки${UE}`, 'giu'), 'заголовки'],
     [new RegExp(`${UB}заколовк(е|ах|ами|ов)${UE}`, 'giu'), 'заголовк$1'],
     [new RegExp(`${UB}заколовок${UE}`, 'giu'), 'заголовок'],
     [new RegExp(`${UB}заколовых${UE}`, 'giu'), 'заголовков'],
     [/заголовок\s+на\s+именовании/giu, 'заголовок наименования'],
+    [new RegExp(`без\\s+номинуван${W}`, 'giu'), 'без наименования'],
+    [/номинование/giu, 'наименование'],
+    [new RegExp(`${UB}клонк[аиуе]?${UE}`, 'giu'), 'колонка'],
+    [new RegExp(`${UB}клонок${UE}`, 'giu'), 'колонок'],
+    [/фильтридаты/giu, 'фильтр даты'],
+    [/блокак/giu, 'блок'],
 
-    /* placeholder / clickable / sticky / snackbar */
+    /* placeholder / clickable / sticky / snackbar / scrollable */
     [new RegExp(`${UB}плейфхопер${W}${UE}`, 'giu'), 'placeholder'],
     [new RegExp(`${UB}плейс?ф?х[оа]лдер${W}${UE}`, 'giu'), 'placeholder'],
     [new RegExp(`${UB}пикабел${W}${UE}`, 'giu'), 'кликабелен'],
     [new RegExp(`${UB}скройц${W}${UE}`, 'giu'), 'scrollable'],
+    [/скройится/giu, 'scrollable'],
+    [new RegExp(`которая\\s+скройи${W}`, 'giu'), 'которая scrollable'],
+    [new RegExp(`область\\s+скройи${W}`, 'giu'), 'область scrollable'],
     [/в\s+правой\s+области\s+стики/giu, 'в правой области sticky'],
     [new RegExp(`${UB}в\\s+стеки${UE}`, 'giu'), 'в sticky'],
     [new RegExp(`${UB}стики${UE}`, 'giu'), 'sticky'],
     [new RegExp(`${UB}стик[ие]${UE}`, 'giu'), 'sticky'],
     [/\bsyncbar\b/gi, 'snackbar'],
     [/\bsnack\s*bar\b/gi, 'snackbar'],
+    [/снег-?бар/giu, 'snackbar'],
+    [/снегбар/giu, 'snackbar'],
 
     /* акт / фото / приёмка */
     [new RegExp(`области\\s+акт(?:а)?римк${W}`, 'giu'), 'области приёмки'],
@@ -2046,14 +2064,21 @@
     [new RegExp(`${UB}ак[оа]при[её]мк${W}${UE}`, 'giu'), 'акт приёмки'],
     [/фото-?дорогрузки/giu, 'фото до разгрузки'],
     [new RegExp(`${UB}флото${UE}`, 'giu'), 'фото'],
+    [/загрузите\s+фл(?=\s|,|\.|$)/giu, 'загрузите фото'],
     [/фототовара/giu, 'фото товара'],
     [/фото\s*проблемой/giu, 'фото проблемы'],
     [/модель\s+на\s+окно/giu, 'модальное окно'],
+    [/модальный\s+окном/giu, 'модальное окно'],
+    [/модальным\s+окном/giu, 'модальное окно'],
+    [/образовыховых\s+мест/giu, 'грузовых мест'],
+    [/особых\s+грузовых/giu, 'грузовых'],
 
     /* статусы / design tokens */
     [new RegExp(`${UB}саксзекс${W}${UE}`, 'giu'), 'success'],
     [new RegExp(`${UB}соксесс${W}${UE}`, 'giu'), 'success'],
     [new RegExp(`${UB}саксес${W}${UE}`, 'giu'), 'success'],
+    [new RegExp(`${UB}сексасов${W}?${UE}`, 'giu'), 'success'],
+    [new RegExp(`${UB}сексас${W}${UE}`, 'giu'), 'success'],
     [new RegExp(`${UB}ворнин${W}${UE}`, 'giu'), 'warning'],
     [new RegExp(`${UB}ворнен${W}${UE}`, 'giu'), 'warning'],
     [/синяя\s+акцепт/giu, 'синий info'],
@@ -2066,22 +2091,31 @@
     [new RegExp(`${UB}ипн${UE}`, 'giu'), 'ИНН'],
     [new RegExp(`${UB}фил${UE}`, 'giu'), 'ФИО'],
 
-    /* SKU / штрихкод */
+    /* SKU / штрихкод / шт */
     [/\bSQL\b/gi, 'SKU'],
     [/\bSq\b/g, 'SKU'],
     [new RegExp(`${UB}СКУ${UE}`, 'gu'), 'SKU'],
     [new RegExp(`${UB}ску${UE}`, 'giu'), 'SKU'],
     [new RegExp(`${UB}скл${UE}`, 'giu'), 'SKU'],
+    [new RegExp(`${UB}склун${UE}`, 'giu'), 'SKU'],
     [new RegExp(`штрихход${W}`, 'giu'), 'штрихкод'],
     [new RegExp(`штрих\\s*ход${W}`, 'giu'), 'штрихкод'],
+    [new RegExp(`${UB}шета${UE}`, 'giu'), 'шт.'],
+    [new RegExp(`${UB}шты${UE}`, 'giu'), 'шт.'],
+    [/количество\s+С\s+пишем/giu, 'количество шт.'],
+    [/С\s+пишем/giu, 'шт.'],
 
     /* упаковка / грузоместа */
     [new RegExp(`коробонародн${W}`, 'giu'), 'коробочный'],
     [new RegExp(`коробосборн${W}`, 'giu'), 'сборный'],
+    [new RegExp(`коробов\\s+сборн${W}`, 'giu'), 'сборный'],
     [new RegExp(`дедумераци${W}`, 'giu'), 'нумерация'],
+    [/умираться/giu, 'нумерация'],
+    [/идёт\s+умираться/giu, 'идёт нумерация'],
     [/типа\s+паковки/giu, 'тип упаковки'],
     [/поврежденного\s+туковка/giu, 'повреждённая упаковка'],
     [new RegExp(`поврежденн${W}\\s+поковк${W}`, 'giu'), 'повреждённая упаковка'],
+    [new RegExp(`поврежденного\\s+куковк${W}`, 'giu'), 'повреждённая упаковка'],
     [/метров?\s+публических/giu, 'метров кубических'],
     [new RegExp(`${UB}публических${UE}`, 'giu'), 'кубических'],
 
@@ -2094,10 +2128,19 @@
     [new RegExp(`${UB}мрак${UE}`, 'giu'), 'брак'],
     [new RegExp(`${UB}враг${UE}`, 'giu'), 'брак'],
     [/содержани[ея]\s+недостачи/giu, 'варианты: недостача'],
+    [/содержани[ея]\s+недостаток/giu, 'варианты: недостача'],
+    [/недостаточим/giu, 'недостачи'],
+    [/недостаточем/giu, 'недостача'],
+    [/достаточаа/giu, 'недостача'],
+    [/из\s+зелишек/giu, 'излишек'],
+    [new RegExp(`${UB}зелишек${UE}`, 'giu'), 'излишек'],
+    [/перенеп/giu, 'принято'],
+    [/осочастили/giu, 'осуществили'],
     [new RegExp(`тип-?лейб${W}`, 'giu'), 'тип лейблов'],
     [new RegExp(`тип-?проблем${W}`, 'giu'), 'тип проблемы'],
     [/каждая\s+старка/giu, 'каждая строка'],
     [/согранить/giu, 'сохранить'],
+    [/загранить/giu, 'сохранить'],
 
     /* disabled / UI chrome */
     [new RegExp(`${UB}дизейбу${UE}`, 'giu'), 'disabled'],
@@ -2109,15 +2152,19 @@
     [new RegExp(`${UB}кризин${W}${UE}`, 'giu'), 'корзины'],
     [/кнопка\s+[«"']?конку\s+удалить[»"']?/giu, 'кнопка «удалить»'],
     [/конку\s+удалить/giu, 'удалить'],
+    [/иудалить/giu, 'удалить'],
+    [/на\s+иудалить/giu, 'на удалить'],
 
     /* печать / подсказка / прочее */
     [new RegExp(`${UB}печачь${UE}`, 'giu'), 'печать'],
     [/у\s+сказка/giu, 'подсказка'],
-    [new RegExp(`${UB}шета${UE}`, 'giu'), 'шт.'],
     [/\bempty\s*state\b/gi, 'empty state'],
     [/номер\s+к\s+телефону/giu, 'номер телефона'],
-    [/голову?\s+катана/giu, 'логотип'],
+    [/голов[ауиы]?\s+катана/giu, 'логотип'],
     [/не\s+посереди/giu, 'не посередине'],
+    [/послесет\s+на/giu, 'посередине'],
+    [/он\s+послесет/giu, 'он посередине'],
+    [/загружается\s+самым/giu, 'загружается в самый верх'],
 
     /* social */
     [new RegExp(`${UB}инстаграм${UE}`, 'giu'), 'Instagram'],
@@ -2637,7 +2684,7 @@
 
   function buildRewritePrompt(raw, lang, style, translate, cefr, minimal) {
     const asrFix =
-      'Fix obvious ASR mishearings. Map: резидент поставки→реестр поставок; заколовки/подзакололок→заголовки/подзаголовок; плейфхопер→placeholder; пикабелен→кликабелен; SQL/СКУ→SKU; штрихходы→штрихкоды; стики/стеки→sticky; syncbar→snackbar; ворнин→warning; саксзекс→success; акцепт(цвет)→info; иенен/иннен→ИНН; фил→ФИО; актримки→акт приёмки; флото→фото; печачь→печать; у сказка→подсказка; кризина→корзина; мрак/враг→брак; несовзесте→несоответствие; дизейбу/Disable→disabled; коробонародный→коробочный; племенночастичной→принята частично; дедумерация→нумерация. Keep UI terms: SKU, sticky, snackbar, checkbox, modal, toggle, placeholder. Domain: приёмка, акт приёмки, грузовое место, недостача, излишек. Do NOT invent features or drop requirements.';
+      'Fix obvious ASR mishearings. Map: резидент→реестр поставок; заколовки→заголовки; клонк→колонка; номинувание→наименование; плейфхопер→placeholder; скройится→scrollable; стики→sticky; syncbar/снег-бар→snackbar; Сексасов/саксзекс→success; ворнин→warning; склун/SQL→SKU; шты/С пишем→шт.; фл/флото→фото; Загранить→сохранить; зелишек→излишек; достаточаа→недостача; умираться→нумерация; голова катана→логотип; иудалить→удалить; планеточастичного→принята частично; образовыховых мест→грузовых мест. Keep: SKU sticky snackbar checkbox modal toggle placeholder. Domain: приёмка акт приёмки грузовое место. Do NOT invent or drop requirements.';
     if (minimal) {
       if (translate) {
         return `Translate to English (CEFR ${cefr}). ${asrFix} Reply with the translation text only — no labels, no notes.\n\n${raw}`;
