@@ -1975,69 +1975,153 @@
     window.addEventListener('scroll', () => { if (root.classList.contains('open')) placeContent(); }, true);
   })();
 
-  /* initial_prompt: якоря терминов UI / social / IT (Whisper подтягивает лексику) */
+  /* initial_prompt: якоря терминов UI / warehouse / social / IT */
   const WHISPER_PROMPTS = {
     ru: [
-      'Спецификация интерфейса. Реестр поставок, приёмка, акт приёмки, грузовое место.',
-      'Термины: SKU, ИНН, sticky, scrollable, snackbar, checkbox, dropdown, modal, tooltip, placeholder.',
-      'UI: кнопка, заголовок, подзаголовок, колонка, фильтр, статус, пустое состояние, empty state.',
-      'Social / Instagram: Instagram, Reels, Stories, feed, лайк, сторис, профиль, директ, хештег, CTA.',
-      'IT: API, JWT, OAuth, webhook, endpoint, frontend, backend, деплой, Vercel, GitHub.',
-      'Даты в формате ДД.ММ.ГГГГ. Статусы: ожидает приёмки, частично принято, принято.',
+      'Спецификация UI. Реестр поставок у менеджера. Приёмка, акт приёмки, фото до разгрузки, грузовое место.',
+      'Колонки: номер поставки, дата оформления ДД.ММ.ГГГГ, партнёр, статус, состав груза, грузовые места.',
+      'Статусы: ожидает приёмки warning жёлтый, частично принято info синий, принято success зелёный.',
+      'Термины: SKU штрихкод, ИНН, ФИО, sticky sidebar, snackbar, checkbox, modal, placeholder, disabled, toggle.',
+      'Кнопки: Принять, Принять всё, Загрузить акт, Загрузить фото, Печать упаковочного листа, Завершить приёмку.',
+      'Проблемы: недостача, излишек, брак, несоответствие товара документам, повреждённая упаковка.',
+      'Social: Instagram, Reels, Stories. IT: API, webhook, frontend, backend.',
     ].join(' '),
     en: [
       'UI product spec. Shipments registry, goods acceptance, packing list, sticky sidebar, snackbar.',
-      'Terms: SKU, checkbox, dropdown, modal, tooltip, placeholder, scrollable, empty state, CTA.',
-      'Social / Instagram: Instagram, Reels, Stories, feed, likes, Direct, hashtag.',
-      'IT: API, JWT, OAuth, webhook, endpoint, frontend, backend, deploy, Vercel, GitHub.',
+      'Terms: SKU barcode, checkbox, dropdown, modal, tooltip, placeholder, scrollable, disabled, empty state, CTA.',
+      'Statuses: awaiting acceptance warning, partially accepted info, accepted success.',
+      'Social: Instagram, Reels, Stories. IT: API, JWT, OAuth, webhook, frontend, backend.',
     ].join(' '),
-    uk: 'Специфікація інтерфейсу. Поставки, приймання, SKU, ІПН, sticky, snackbar, checkbox, Instagram.',
-    de: 'UI-Spezifikation. Lieferung, Annahme, SKU, sticky, snackbar, checkbox, Instagram, CTA.',
-    fr: 'Spécification UI. Livraison, réception, SKU, sticky, snackbar, checkbox, Instagram, CTA.',
-    es: 'Especificación UI. Entrega, recepción, SKU, sticky, snackbar, checkbox, Instagram, CTA.',
-    zh: '界面规格。发货、验收、SKU、sticky、snackbar、checkbox、Instagram、CTA。',
-    ja: 'UI仕様。納品、検収、SKU、sticky、snackbar、checkbox、Instagram、CTA。',
+    uk: 'Специфікація UI. Реєстр поставок, приймання, акт, SKU, ІПН, sticky, snackbar, checkbox, modal.',
+    de: 'UI-Spezifikation. Lieferregister, Annahme, SKU, sticky, snackbar, checkbox, Instagram, CTA.',
+    fr: 'Spécification UI. Registre livraisons, réception, SKU, sticky, snackbar, checkbox, Instagram.',
+    es: 'Especificación UI. Registro envíos, recepción, SKU, sticky, snackbar, checkbox, Instagram.',
+    zh: '界面规格。发货登记、验收、SKU、sticky、snackbar、checkbox、Instagram。',
+    ja: 'UI仕様。納品一覧、検収、SKU、sticky、snackbar、checkbox、Instagram。',
   };
 
-  /* частые ASR-опечатки → канон (после Whisper, до абзацев/LLM) */
+  /* Unicode word boundary: JS \b/\w без /u ломают кириллицу */
+  const UB = String.raw`(?<![\p{L}\p{N}_])`;
+  const UE = String.raw`(?![\p{L}\p{N}_])`;
+  const W = String.raw`[\p{L}\p{N}]*`;
+
+  /* частые ASR-опечатки → канон; порядок важен; все с флагом u */
   const ASR_FIXES = [
-    [/резидент(а|у|ом|е)?\s+по\s+ставк\w*/gi, 'реестр поставок'],
-    [/реестр\s+по\s+ставок/gi, 'реестр поставок'],
-    [/\bпо\s+ставк(\w*)\b/gi, 'поставк$1'],
-    [/\bдо\s+ставк(\w*)\b/gi, 'доставк$1'],
-    [/\bзаколовок/gi, 'заголовок'],
-    [/\bзаколовых/gi, 'заголовков'],
-    [/\bпикабел\w*/gi, 'кликабелен'],
-    [/\bскройц\w*/gi, 'scrollable'],
-    [/\bстик[ие]\b/gi, 'sticky'],
+    /* реестр / поставка */
+    [new RegExp(`резидент${W}\\s+постав(?:ки|ок|ке|кам)?`, 'giu'), 'реестр поставок'],
+    [new RegExp(`резидент${W}\\s+по\\s+ставк${W}`, 'giu'), 'реестр поставок'],
+    [/реестр\s+по\s+ставок/giu, 'реестр поставок'],
+    [new RegExp(`${UB}по\\s+ставк(${W})${UE}`, 'giu'), 'поставк$1'],
+    [new RegExp(`${UB}до\\s+ставк(${W})${UE}`, 'giu'), 'доставк$1'],
+    [/для\s+при[её]мки\s+до\s+ставки/giu, 'для приёмки поставки'],
+    [/при[её]мки\s+до\s+ставки/giu, 'приёмки поставки'],
+    [/завершить\s+прямку/giu, 'завершить приёмку'],
+    [/заверш\s+появляться/giu, 'завершить — появляется'],
+    [new RegExp(`племенночастичн${W}`, 'giu'), 'принята частично'],
+
+    /* заголовки */
+    [new RegExp(`${UB}подзаколол${W}${UE}`, 'giu'), 'подзаголовок'],
+    [new RegExp(`${UB}заколовки${UE}`, 'giu'), 'заголовки'],
+    [new RegExp(`${UB}заколовк(е|ах|ами|ов)${UE}`, 'giu'), 'заголовк$1'],
+    [new RegExp(`${UB}заколовок${UE}`, 'giu'), 'заголовок'],
+    [new RegExp(`${UB}заколовых${UE}`, 'giu'), 'заголовков'],
+    [/заголовок\s+на\s+именовании/giu, 'заголовок наименования'],
+
+    /* placeholder / clickable / sticky / snackbar */
+    [new RegExp(`${UB}плейфхопер${W}${UE}`, 'giu'), 'placeholder'],
+    [new RegExp(`${UB}плейс?ф?х[оа]лдер${W}${UE}`, 'giu'), 'placeholder'],
+    [new RegExp(`${UB}пикабел${W}${UE}`, 'giu'), 'кликабелен'],
+    [new RegExp(`${UB}скройц${W}${UE}`, 'giu'), 'scrollable'],
+    [/в\s+правой\s+области\s+стики/giu, 'в правой области sticky'],
+    [new RegExp(`${UB}в\\s+стеки${UE}`, 'giu'), 'в sticky'],
+    [new RegExp(`${UB}стики${UE}`, 'giu'), 'sticky'],
+    [new RegExp(`${UB}стик[ие]${UE}`, 'giu'), 'sticky'],
     [/\bsyncbar\b/gi, 'snackbar'],
     [/\bsnack\s*bar\b/gi, 'snackbar'],
-    [/\bак[оа]при[её]мк\w*/gi, 'акт приёмки'],
-    [/\bсоксесс\w*/gi, 'success'],
-    [/\bворнен\b/gi, 'warning'],
-    [/\bиннен\b/gi, 'ИНН'],
-    [/\bиэнэн\b/gi, 'ИНН'],
-    [/\bипн\b/gi, 'ИНН'],
-    [/\bголову?\s+катана\b/gi, 'логотип'],
-    [/\bголова\s+катана\b/gi, 'логотип'],
-    [/\bSql\b/g, 'SKU'],
+
+    /* акт / фото / приёмка */
+    [new RegExp(`области\\s+акт(?:а)?римк${W}`, 'giu'), 'области приёмки'],
+    [new RegExp(`${UB}актримк${W}${UE}`, 'giu'), 'акт приёмки'],
+    [new RegExp(`${UB}актаримк${W}${UE}`, 'giu'), 'акт приёмки'],
+    [new RegExp(`${UB}ак[оа]при[её]мк${W}${UE}`, 'giu'), 'акт приёмки'],
+    [/фото-?дорогрузки/giu, 'фото до разгрузки'],
+    [new RegExp(`${UB}флото${UE}`, 'giu'), 'фото'],
+    [/фототовара/giu, 'фото товара'],
+    [/фото\s*проблемой/giu, 'фото проблемы'],
+    [/модель\s+на\s+окно/giu, 'модальное окно'],
+
+    /* статусы / design tokens */
+    [new RegExp(`${UB}саксзекс${W}${UE}`, 'giu'), 'success'],
+    [new RegExp(`${UB}соксесс${W}${UE}`, 'giu'), 'success'],
+    [new RegExp(`${UB}саксес${W}${UE}`, 'giu'), 'success'],
+    [new RegExp(`${UB}ворнин${W}${UE}`, 'giu'), 'warning'],
+    [new RegExp(`${UB}ворнен${W}${UE}`, 'giu'), 'warning'],
+    [/синяя\s+акцепт/giu, 'синий info'],
+    [/\bакцепт\b/gi, 'info'],
+
+    /* ИНН / ФИО */
+    [new RegExp(`${UB}иенен${UE}`, 'giu'), 'ИНН'],
+    [new RegExp(`${UB}иннен${UE}`, 'giu'), 'ИНН'],
+    [new RegExp(`${UB}иэнэн${UE}`, 'giu'), 'ИНН'],
+    [new RegExp(`${UB}ипн${UE}`, 'giu'), 'ИНН'],
+    [new RegExp(`${UB}фил${UE}`, 'giu'), 'ФИО'],
+
+    /* SKU / штрихкод */
+    [/\bSQL\b/gi, 'SKU'],
     [/\bSq\b/g, 'SKU'],
-    [/\bСКУ\b/g, 'SKU'],
-    [/\bску\b/gi, 'SKU'],
-    [/\bскл\b/gi, 'SKU'],
-    [/\bшета\b/gi, 'шт.'],
+    [new RegExp(`${UB}СКУ${UE}`, 'gu'), 'SKU'],
+    [new RegExp(`${UB}ску${UE}`, 'giu'), 'SKU'],
+    [new RegExp(`${UB}скл${UE}`, 'giu'), 'SKU'],
+    [new RegExp(`штрихход${W}`, 'giu'), 'штрихкод'],
+    [new RegExp(`штрих\\s*ход${W}`, 'giu'), 'штрихкод'],
+
+    /* упаковка / грузоместа */
+    [new RegExp(`коробонародн${W}`, 'giu'), 'коробочный'],
+    [new RegExp(`коробосборн${W}`, 'giu'), 'сборный'],
+    [new RegExp(`дедумераци${W}`, 'giu'), 'нумерация'],
+    [/типа\s+паковки/giu, 'тип упаковки'],
+    [/поврежденного\s+туковка/giu, 'повреждённая упаковка'],
+    [new RegExp(`поврежденн${W}\\s+поковк${W}`, 'giu'), 'повреждённая упаковка'],
+    [/метров?\s+публических/giu, 'метров кубических'],
+    [new RegExp(`${UB}публических${UE}`, 'giu'), 'кубических'],
+
+    /* проблемы приёмки */
+    [/несовзесте\s+с\s+товаром/giu, 'несоответствие товара'],
+    [new RegExp(`${UB}несовзестн${W}${UE}`, 'giu'), 'несоответствие'],
+    [new RegExp(`${UB}несовзесте${UE}`, 'giu'), 'несоответствие'],
+    [new RegExp(`из\\s+мрак${UE}`, 'giu'), 'брак'],
+    [new RegExp(`${UB}мрака${UE}`, 'giu'), 'брака'],
+    [new RegExp(`${UB}мрак${UE}`, 'giu'), 'брак'],
+    [new RegExp(`${UB}враг${UE}`, 'giu'), 'брак'],
+    [/содержани[ея]\s+недостачи/giu, 'варианты: недостача'],
+    [new RegExp(`тип-?лейб${W}`, 'giu'), 'тип лейблов'],
+    [new RegExp(`тип-?проблем${W}`, 'giu'), 'тип проблемы'],
+    [/каждая\s+старка/giu, 'каждая строка'],
+    [/согранить/giu, 'сохранить'],
+
+    /* disabled / UI chrome */
+    [new RegExp(`${UB}дизейбу${UE}`, 'giu'), 'disabled'],
+    [/в\s+состоянии\s+Disable/gi, 'в состоянии disabled'],
+    [/\bDisable\b/g, 'disabled'],
+    [new RegExp(`Toggle\\s+есть\\s+проблем${W}`, 'giu'), 'toggle «Есть проблемы»'],
+    [new RegExp(`иконка\\s+кризин${W}`, 'giu'), 'иконка корзины'],
+    [new RegExp(`${UB}кризын${W}${UE}`, 'giu'), 'корзины'],
+    [new RegExp(`${UB}кризин${W}${UE}`, 'giu'), 'корзины'],
+    [/кнопка\s+[«"']?конку\s+удалить[»"']?/giu, 'кнопка «удалить»'],
+    [/конку\s+удалить/giu, 'удалить'],
+
+    /* печать / подсказка / прочее */
+    [new RegExp(`${UB}печачь${UE}`, 'giu'), 'печать'],
+    [/у\s+сказка/giu, 'подсказка'],
+    [new RegExp(`${UB}шета${UE}`, 'giu'), 'шт.'],
     [/\bempty\s*state\b/gi, 'empty state'],
-    [/\bпечачь\b/gi, 'печать'],
-    [/\bу\s+сказка\b/gi, 'подсказка'],
-    [/\bкризын\w*/gi, 'корзины'],
-    [/\bконку\s+удалить\b/gi, 'кнопка удалить'],
-    [/\bнесовзестн\w*/gi, 'несоответствие'],
-    [/\bмрака\b/gi, 'брака'],
-    [/\bметров?\s+публических\b/gi, 'метров кубических'],
-    [/\bпублических\b/gi, 'кубических'],
-    [/\bномер\s+к\s+телефону\b/gi, 'номер телефона'],
-    [/\bинстаграм\b/gi, 'Instagram'],
-    [/\bрилс(ы|ов)?\b/gi, 'Reels'],
+    [/номер\s+к\s+телефону/giu, 'номер телефона'],
+    [/голову?\s+катана/giu, 'логотип'],
+    [/не\s+посереди/giu, 'не посередине'],
+
+    /* social */
+    [new RegExp(`${UB}инстаграм${UE}`, 'giu'), 'Instagram'],
+    [new RegExp(`${UB}рилс(ы|ов)?${UE}`, 'giu'), 'Reels'],
     [/\bstories\b/gi, 'Stories'],
   ];
 
@@ -2309,8 +2393,8 @@
   function applyAsrFixes(text) {
     let t = text || '';
     for (const [re, to] of ASR_FIXES) {
-      if (typeof to === 'function') t = t.replace(re, to);
-      else t = t.replace(re, to);
+      re.lastIndex = 0;
+      t = t.replace(re, to);
     }
     return t;
   }
@@ -2553,7 +2637,7 @@
 
   function buildRewritePrompt(raw, lang, style, translate, cefr, minimal) {
     const asrFix =
-      'Fix obvious ASR mishearings in UI/product specs: restore terms SKU, ИНН/INN, sticky, scrollable, snackbar, checkbox, dropdown, modal, Instagram, Reels, Stories, CTA, API, webhook; Russian domain: реестр поставок, приёмка, акт приёмки, грузовое место, empty state. Do NOT invent features or drop requirements.';
+      'Fix obvious ASR mishearings. Map: резидент поставки→реестр поставок; заколовки/подзакололок→заголовки/подзаголовок; плейфхопер→placeholder; пикабелен→кликабелен; SQL/СКУ→SKU; штрихходы→штрихкоды; стики/стеки→sticky; syncbar→snackbar; ворнин→warning; саксзекс→success; акцепт(цвет)→info; иенен/иннен→ИНН; фил→ФИО; актримки→акт приёмки; флото→фото; печачь→печать; у сказка→подсказка; кризина→корзина; мрак/враг→брак; несовзесте→несоответствие; дизейбу/Disable→disabled; коробонародный→коробочный; племенночастичной→принята частично; дедумерация→нумерация. Keep UI terms: SKU, sticky, snackbar, checkbox, modal, toggle, placeholder. Domain: приёмка, акт приёмки, грузовое место, недостача, излишек. Do NOT invent features or drop requirements.';
     if (minimal) {
       if (translate) {
         return `Translate to English (CEFR ${cefr}). ${asrFix} Reply with the translation text only — no labels, no notes.\n\n${raw}`;
