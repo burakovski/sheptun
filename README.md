@@ -37,7 +37,13 @@ python3 -m http.server 8765
 # open http://127.0.0.1:8765
 ```
 
-Or open `index.html` via any static server. ES modules load Whisper / WebLLM from CDN, so a local file:// open may be blocked by the browser — prefer `http.server` or similar.
+Or open `index.html` via any static server.
+
+**Phone / downloaded HTML:** opening a lone `index.html` as `file://` used to break tabs and images. Current build lazy-loads Whisper and, on `file://`, pulls `assets/` from jsDelivr — **internet required**. Best options:
+
+1. Open the live site / GitHub Pages over **https**
+2. Or copy the whole folder (`index.html` + `assets/`) and serve with a tiny HTTP app
+3. Single-file `file://` works for UI if online; STT still needs network for models
 
 **Requirements**
 

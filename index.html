@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Шептун · sheptun-stt</title>
+<!-- file:// (скачанный HTML): ассеты с CDN — иначе без папки assets картинки не грузятся -->
+<script>
+(function () {
+  if (location.protocol !== 'file:') return;
+  var b = document.createElement('base');
+  b.href = 'https://cdn.jsdelivr.net/gh/burakovski/sheptun@main/';
+  var head = document.head || document.getElementsByTagName('head')[0];
+  head.insertBefore(b, head.firstChild);
+})();
+</script>
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1612,8 +1622,20 @@
 
 <script src="https://unpkg.com/lucide@0.468.0"></script>
 <script type="module">
-  import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.2';
-  env.allowLocalModels = false;
+  /* Transformers — только lazy import: top-level import на file:///мобилке валит весь UI */
+  let hfPipeline = null;
+
+  async function ensureTransformers() {
+    if (hfPipeline) return;
+    try {
+      const mod = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.2');
+      hfPipeline = mod.pipeline;
+      if (mod.env) mod.env.allowLocalModels = false;
+    } catch (e) {
+      console.error(e);
+      throw new Error(t('errTransformersLoad'));
+    }
+  }
 
   function refreshIcons() {
     if (window.lucide?.createIcons) window.lucide.createIcons();
@@ -1725,6 +1747,7 @@
       micRecording: 'запись…',
       micReady: 'Запись готова · {0} KB · ~{1}s',
       alertMic: 'Нет доступа к микрофону: {0}',
+      errTransformersLoad: 'Не удалось загрузить Whisper (нужен интернет / открой через http(s), не file://)',
     },
     en: {
       brand: 'She<span class="p-wrap">p<i data-lucide="crown" class="crown" aria-hidden="true"></i></span>tun',
@@ -1782,6 +1805,7 @@
       micRecording: 'recording…',
       micReady: 'Recording ready · {0} KB · ~{1}s',
       alertMic: 'Microphone access denied: {0}',
+      errTransformersLoad: 'Failed to load Whisper (need network / open via http(s), not file://)',
     },
   };
 
@@ -2291,21 +2315,22 @@
   async function tryLoadModel(modelId, opts, preferGpu) {
     if (preferGpu) {
       try {
-        const t = await pipeline('automatic-speech-recognition', modelId, { ...opts, device: 'webgpu', dtype: 'fp32' });
+        const t = await hfPipeline('automatic-speech-recognition', modelId, { ...opts, device: 'webgpu', dtype: 'fp32' });
         return { transcriber: t, backend: 'webgpu' };
       } catch { /* fall through */ }
     }
     try {
-      const t = await pipeline('automatic-speech-recognition', modelId, { ...opts, dtype: 'q8' });
+      const t = await hfPipeline('automatic-speech-recognition', modelId, { ...opts, dtype: 'q8' });
       return { transcriber: t, backend: 'wasm-q8' };
     } catch {
-      const t = await pipeline('automatic-speech-recognition', modelId, opts);
+      const t = await hfPipeline('automatic-speech-recognition', modelId, opts);
       return { transcriber: t, backend: 'wasm' };
     }
   }
 
   async function loadWhisper() {
     if (transcriber) { log(t('logWhisperCached'), 'done'); return; }
+    await ensureTransformers();
     if (!selectedModel) selectedModel = await pickBestModel();
 
     const startIdx = Math.max(0, MODEL_CANDIDATES.indexOf(selectedModel));
