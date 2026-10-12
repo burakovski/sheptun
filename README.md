@@ -4,12 +4,25 @@
 
 Private, in-browser speech-to-text with a tavern fantasy UI. Audio never leaves your machine — Whisper and an optional local LLM run entirely in the browser.
 
+**Use it:** [https://sheptun.vercel.app](https://sheptun.vercel.app)  
+**Code:** [burakovski/sheptun](https://github.com/burakovski/sheptun)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-burgundy.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 > **Русский:** [Кратко по-русски](#русский) · полный UI на русском и английском.
 
 ---
+
+## Share this
+
+Give people the live link — not a downloaded HTML file:
+
+```text
+https://sheptun.vercel.app
+```
+
+Opening `index.html` from Telegram / `file://` breaks the app on phones. The Vercel URL is the product.
 
 ## Why this name?
 
@@ -39,11 +52,7 @@ python3 -m http.server 8765
 
 Or open `index.html` via any static server.
 
-**Phone / downloaded HTML:** opening a lone `index.html` as `file://` used to break tabs and images. Current build lazy-loads Whisper and, on `file://`, pulls `assets/` from jsDelivr — **internet required**. Best options:
-
-1. Open the live site / GitHub Pages over **https**
-2. Or copy the whole folder (`index.html` + `assets/`) and serve with a tiny HTTP app
-3. Single-file `file://` works for UI if online; STT still needs network for models
+**Share with users:** [https://sheptun.vercel.app](https://sheptun.vercel.app) (preferred). Local/`file://` HTML is for development only.
 
 **Requirements**
 
@@ -122,9 +131,10 @@ Third-party models (Whisper, Qwen, Llama, Phi, etc.) remain under their own lice
 
 **Sheptun (Шептун)** — локальный speech-to-text в браузере: прошептал — получил текст. Аудио не уходит на сервер.
 
+**Пользоваться / шарить:** [https://sheptun.vercel.app](https://sheptun.vercel.app)
+
 ```bash
-python3 -m http.server 8765
-# http://127.0.0.1:8765
+python3 -m http.server 8765   # локальная разработка
 ```
 
 Репозиторий: [burakovski/sheptun](https://github.com/burakovski/sheptun).  

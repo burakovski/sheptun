@@ -8,6 +8,8 @@ Thumbs.db
 dist/
 node_modules/
 *.local
+.vercel
+Шептун.html
 
 # scratch / duplicate source art outside assets/
 Frame 1.svg
