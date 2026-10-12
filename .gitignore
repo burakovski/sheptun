@@ -10,6 +10,7 @@ node_modules/
 *.local
 .vercel
 Шептун.html
+open graph.png
 
 # scratch / duplicate source art outside assets/
 Frame 1.svg

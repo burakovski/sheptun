@@ -3,7 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Шептун · sheptun-stt</title>
+<title>Шептун — бесплатный транскрибатор речи в текст</title>
+<meta name="description" content="Шепни — я запишу. Транскрибация в браузере: без регистрации и рекламы. Стили текста и перевод на английский">
+<meta name="theme-color" content="#4a1219">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sheptun">
+<meta property="og:url" content="https://sheptun.vercel.app/">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Шептун — бесплатный транскрибатор речи в текст">
+<meta property="og:description" content="Шепни — я запишу. Транскрибация в браузере: без регистрации и рекламы. Стили текста и перевод на английский">
+<meta property="og:image" content="https://sheptun.vercel.app/assets/og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Sheptun — speech-to-text">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Шептун — бесплатный транскрибатор речи в текст">
+<meta name="twitter:description" content="Шепни — я запишу. Транскрибация в браузере: без регистрации и рекламы. Стили текста и перевод на английский">
+<meta name="twitter:image" content="https://sheptun.vercel.app/assets/og.jpg">
+
 <!-- file:// (скачанный HTML): ассеты с CDN — иначе без папки assets картинки не грузятся -->
 <script>
 (function () {
@@ -1694,7 +1715,8 @@
     ru: {
       brand: 'Ше<span class="p-wrap">п<i data-lucide="crown" class="crown" aria-hidden="true"></i></span>тун',
       brandAlt: 'Шептун',
-      brandTitle: 'Шептун · sheptun-stt',
+      brandTitle: 'Шептун — бесплатный транскрибатор речи в текст',
+      ogDescription: 'Шепни — я запишу. Транскрибация в браузере: без регистрации и рекламы. Стили текста и перевод на английский',
       tagline: 'Шепни. Я запишу',
       f1t: 'Без регистрации', f1d: 'Просто открыл и пользуешься',
       f2t: 'Ваши данные в безопасности', f2d: 'Всё обрабатывается локально',
@@ -1752,7 +1774,8 @@
     en: {
       brand: 'She<span class="p-wrap">p<i data-lucide="crown" class="crown" aria-hidden="true"></i></span>tun',
       brandAlt: 'Sheptun',
-      brandTitle: 'Sheptun · sheptun-stt',
+      brandTitle: 'Sheptun — free speech-to-text',
+      ogDescription: 'Whisper it — I’ll write it down. In-browser transcription: no signup, no ads. Text styles and English translation',
       tagline: 'Whisper it. I’ll write it down',
       f1t: 'No signup', f1d: 'Just open and use',
       f2t: 'Your data stays safe', f2d: 'Everything runs locally',
@@ -1840,6 +1863,18 @@
       if (v != null) el.setAttribute('alt', v);
     });
     if (pack.brandTitle) document.title = pack.brandTitle;
+    document.documentElement.lang = uiLang === 'en' ? 'en' : 'ru';
+    const desc = pack.ogDescription || '';
+    const setMeta = (sel, attr, val) => {
+      const el = document.querySelector(sel);
+      if (el && val) el.setAttribute(attr, val);
+    };
+    setMeta('meta[name="description"]', 'content', desc);
+    setMeta('meta[property="og:title"]', 'content', pack.brandTitle);
+    setMeta('meta[property="og:description"]', 'content', desc);
+    setMeta('meta[property="og:locale"]', 'content', uiLang === 'en' ? 'en_US' : 'ru_RU');
+    setMeta('meta[name="twitter:title"]', 'content', pack.brandTitle);
+    setMeta('meta[name="twitter:description"]', 'content', desc);
 
     /* синхрон кнопки, если не в loading/recording */
     const runBtnEl = document.getElementById('runBtn');
@@ -1940,16 +1975,71 @@
     window.addEventListener('scroll', () => { if (root.classList.contains('open')) placeContent(); }, true);
   })();
 
+  /* initial_prompt: якоря терминов UI / social / IT (Whisper подтягивает лексику) */
   const WHISPER_PROMPTS = {
-    ru: 'Добрый день. Сегодня обсудим план. Всё ясно и по делу.',
-    en: 'Good afternoon. Today we discuss the plan clearly and briefly.',
-    uk: 'Добрий день. Сьогодні обговоримо план чітко і по суті.',
-    de: 'Guten Tag. Heute besprechen wir den Plan klar und kurz.',
-    fr: 'Bonjour. Aujourd\'hui nous discutons du plan clairement.',
-    es: 'Buenas tardes. Hoy hablamos del plan de forma clara.',
-    zh: '大家好。今天我们清楚地讨论计划。',
-    ja: 'こんにちは。今日は計画について明確に話します。',
+    ru: [
+      'Спецификация интерфейса. Реестр поставок, приёмка, акт приёмки, грузовое место.',
+      'Термины: SKU, ИНН, sticky, scrollable, snackbar, checkbox, dropdown, modal, tooltip, placeholder.',
+      'UI: кнопка, заголовок, подзаголовок, колонка, фильтр, статус, пустое состояние, empty state.',
+      'Social / Instagram: Instagram, Reels, Stories, feed, лайк, сторис, профиль, директ, хештег, CTA.',
+      'IT: API, JWT, OAuth, webhook, endpoint, frontend, backend, деплой, Vercel, GitHub.',
+      'Даты в формате ДД.ММ.ГГГГ. Статусы: ожидает приёмки, частично принято, принято.',
+    ].join(' '),
+    en: [
+      'UI product spec. Shipments registry, goods acceptance, packing list, sticky sidebar, snackbar.',
+      'Terms: SKU, checkbox, dropdown, modal, tooltip, placeholder, scrollable, empty state, CTA.',
+      'Social / Instagram: Instagram, Reels, Stories, feed, likes, Direct, hashtag.',
+      'IT: API, JWT, OAuth, webhook, endpoint, frontend, backend, deploy, Vercel, GitHub.',
+    ].join(' '),
+    uk: 'Специфікація інтерфейсу. Поставки, приймання, SKU, ІПН, sticky, snackbar, checkbox, Instagram.',
+    de: 'UI-Spezifikation. Lieferung, Annahme, SKU, sticky, snackbar, checkbox, Instagram, CTA.',
+    fr: 'Spécification UI. Livraison, réception, SKU, sticky, snackbar, checkbox, Instagram, CTA.',
+    es: 'Especificación UI. Entrega, recepción, SKU, sticky, snackbar, checkbox, Instagram, CTA.',
+    zh: '界面规格。发货、验收、SKU、sticky、snackbar、checkbox、Instagram、CTA。',
+    ja: 'UI仕様。納品、検収、SKU、sticky、snackbar、checkbox、Instagram、CTA。',
   };
+
+  /* частые ASR-опечатки → канон (после Whisper, до абзацев/LLM) */
+  const ASR_FIXES = [
+    [/резидент(а|у|ом|е)?\s+по\s+ставк\w*/gi, 'реестр поставок'],
+    [/реестр\s+по\s+ставок/gi, 'реестр поставок'],
+    [/\bпо\s+ставк(\w*)\b/gi, 'поставк$1'],
+    [/\bдо\s+ставк(\w*)\b/gi, 'доставк$1'],
+    [/\bзаколовок/gi, 'заголовок'],
+    [/\bзаколовых/gi, 'заголовков'],
+    [/\bпикабел\w*/gi, 'кликабелен'],
+    [/\bскройц\w*/gi, 'scrollable'],
+    [/\bстик[ие]\b/gi, 'sticky'],
+    [/\bsyncbar\b/gi, 'snackbar'],
+    [/\bsnack\s*bar\b/gi, 'snackbar'],
+    [/\bак[оа]при[её]мк\w*/gi, 'акт приёмки'],
+    [/\bсоксесс\w*/gi, 'success'],
+    [/\bворнен\b/gi, 'warning'],
+    [/\bиннен\b/gi, 'ИНН'],
+    [/\bиэнэн\b/gi, 'ИНН'],
+    [/\bипн\b/gi, 'ИНН'],
+    [/\bголову?\s+катана\b/gi, 'логотип'],
+    [/\bголова\s+катана\b/gi, 'логотип'],
+    [/\bSql\b/g, 'SKU'],
+    [/\bSq\b/g, 'SKU'],
+    [/\bСКУ\b/g, 'SKU'],
+    [/\bску\b/gi, 'SKU'],
+    [/\bскл\b/gi, 'SKU'],
+    [/\bшета\b/gi, 'шт.'],
+    [/\bempty\s*state\b/gi, 'empty state'],
+    [/\bпечачь\b/gi, 'печать'],
+    [/\bу\s+сказка\b/gi, 'подсказка'],
+    [/\bкризын\w*/gi, 'корзины'],
+    [/\bконку\s+удалить\b/gi, 'кнопка удалить'],
+    [/\bнесовзестн\w*/gi, 'несоответствие'],
+    [/\bмрака\b/gi, 'брака'],
+    [/\bметров?\s+публических\b/gi, 'метров кубических'],
+    [/\bпублических\b/gi, 'кубических'],
+    [/\bномер\s+к\s+телефону\b/gi, 'номер телефона'],
+    [/\bинстаграм\b/gi, 'Instagram'],
+    [/\bрилс(ы|ов)?\b/gi, 'Reels'],
+    [/\bstories\b/gi, 'Stories'],
+  ];
 
   const CEFR_GUIDE = {
     A1: 'very basic vocabulary, short simple sentences',
@@ -1991,11 +2081,19 @@
     const mem = navigator.deviceMemory;
     const cores = navigator.hardwareConcurrency || 4;
     const webgpu = await hasWebGPU();
+    /* по умолчанию самая мощная бесплатная (small); слабее — только на совсем слабом ПК */
+    let best = 'Xenova/whisper-small';
+    if (!webgpu && mem != null && mem < 4 && cores < 4) best = 'Xenova/whisper-tiny';
+    else if (!webgpu && mem != null && mem < 4) best = 'Xenova/whisper-base';
+
     const saved = localStorage.getItem('sheptun-model');
-    if (saved && MODEL_CANDIDATES.includes(saved)) return saved;
-    if (webgpu && (mem ?? 8) >= 8 && cores >= 6) return 'Xenova/whisper-small';
-    if ((mem ?? 4) >= 4 || webgpu) return 'Xenova/whisper-base';
-    return 'Xenova/whisper-tiny';
+    if (saved && MODEL_CANDIDATES.includes(saved)) {
+      /* не даём старому tiny/base навсегда блокировать small */
+      const si = MODEL_CANDIDATES.indexOf(saved);
+      const bi = MODEL_CANDIDATES.indexOf(best);
+      return si <= bi ? saved : best;
+    }
+    return best;
   }
 
   function shortModelName(id) {
@@ -2181,7 +2279,7 @@
     return out;
   }
 
-  function trimSilence(audio, sr = 16000, thresh = 0.012, padMs = 200) {
+  function trimSilence(audio, sr = 16000, thresh = 0.018, padMs = 120) {
     const pad = Math.floor(sr * padMs / 1000);
     let start = 0, end = audio.length - 1;
     while (start < end && Math.abs(audio[start]) < thresh) start++;
@@ -2189,6 +2287,32 @@
     start = Math.max(0, start - pad);
     end = Math.min(audio.length, end + pad + 1);
     return end - start < sr * 0.2 ? audio : audio.slice(start, end);
+  }
+
+  /** убрать подряд идущие одинаковые / почти одинаковые предложения (галлюцинации Whisper) */
+  function collapseRepeatedSentences(text) {
+    const parts = splitSentences(text);
+    if (parts.length < 2) return text;
+    const out = [];
+    const norm = (s) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+    for (const sent of parts) {
+      const n = norm(sent);
+      if (!n) continue;
+      const prev = out.length ? norm(out[out.length - 1]) : '';
+      if (prev && n === prev) continue;
+      if (prev && n.length > 24 && prev.length > 24 && (n.startsWith(prev.slice(0, 48)) || prev.startsWith(n.slice(0, 48)))) continue;
+      out.push(sent);
+    }
+    return out.join(' ');
+  }
+
+  function applyAsrFixes(text) {
+    let t = text || '';
+    for (const [re, to] of ASR_FIXES) {
+      if (typeof to === 'function') t = t.replace(re, to);
+      else t = t.replace(re, to);
+    }
+    return t;
   }
 
   function splitSentences(text) {
@@ -2219,6 +2343,8 @@
   function cleanTranscript(text, lang = 'ru') {
     let t = (text || '').replace(/\s+/g, ' ').trim();
     if (!t) return '';
+    t = collapseRepeatedSentences(t);
+    t = applyAsrFixes(t);
     /* паразиты; «а»/«ну» как союзы НЕ трогаем — только явные хезитации */
     const fillers = {
       ru: /\b(э+|эм+|хм+|мм+|типа|как бы|в общем[- ]то|это самое|короче|собственно|скажем так)\b/gi,
@@ -2426,20 +2552,22 @@
   }
 
   function buildRewritePrompt(raw, lang, style, translate, cefr, minimal) {
+    const asrFix =
+      'Fix obvious ASR mishearings in UI/product specs: restore terms SKU, ИНН/INN, sticky, scrollable, snackbar, checkbox, dropdown, modal, Instagram, Reels, Stories, CTA, API, webhook; Russian domain: реестр поставок, приёмка, акт приёмки, грузовое место, empty state. Do NOT invent features or drop requirements.';
     if (minimal) {
       if (translate) {
-        return `Translate to English (CEFR ${cefr}). Reply with the translation text only — no labels, no notes.\n\n${raw}`;
+        return `Translate to English (CEFR ${cefr}). ${asrFix} Reply with the translation text only — no labels, no notes.\n\n${raw}`;
       }
-      return `Lightly edit. Reply with the edited text only — no labels, no notes.\n\n${raw}`;
+      return `Proofread ASR transcript. ${asrFix} Reply with the corrected text only — no labels, no notes.\n\n${raw}`;
     }
     const preserve =
-      'Keep nearly the same content and length. Do NOT drop, merge, summarize, or invent. Only remove filled pauses (uh/um/э/эм) and exact consecutive duplicate words.';
+      'Keep nearly the same content and length. Do NOT drop, merge, summarize, or invent. Only remove filled pauses (uh/um/э/эм), exact consecutive duplicate words, and duplicated sentences.';
     const styleMap = {
-      clean: `${preserve} Fix punctuation/capitalization. Short paragraphs of 2–4 sentences (blank line between) when long enough.`,
-      business: `${preserve} Clear professional business prose. Keep all facts. Short paragraphs.`,
-      notes: 'Concise bullet notes starting with • . Keep distinct points.',
-      protocol: 'Meeting protocol: Topic / Discussed / Decisions / Actions. Keep all decisions and actions.',
-      letter: 'Short formal business letter body. No invented names. Keep key facts.',
+      clean: `${preserve} ${asrFix} Fix punctuation/capitalization. Short paragraphs of 2–4 sentences (blank line between) when long enough.`,
+      business: `${preserve} ${asrFix} Clear professional business prose. Keep all facts. Short paragraphs.`,
+      notes: `${asrFix} Concise bullet notes starting with • . Keep distinct points.`,
+      protocol: `${asrFix} Meeting protocol: Topic / Discussed / Decisions / Actions. Keep all decisions and actions.`,
+      letter: `${asrFix} Short formal business letter body. No invented names. Keep key facts.`,
     };
     const instr = styleMap[style] || styleMap.clean;
     const ban =
@@ -2456,10 +2584,10 @@
       ].join('\n');
     }
     return [
-      `Edit the transcript. Keep language (${lang === 'null' ? 'same as input' : lang}).`,
+      `Proofread the ASR transcript (do not rewrite as a new story). Keep language (${lang === 'null' ? 'same as input' : lang}).`,
       `Style: ${instr}`,
       ban,
-      'Return ONLY the edited text.',
+      'Return ONLY the corrected text.',
       '',
       'TRANSCRIPT:',
       raw,
@@ -2569,8 +2697,14 @@
       log(t('logTranscribing'), 'active');
 
       const opts = {
-        chunk_length_s: 30, stride_length_s: 5, return_timestamps: true,
-        no_speech_threshold: 0.6, compression_ratio_threshold: 2.4, logprob_threshold: -1.0,
+        chunk_length_s: 30,
+        stride_length_s: 5,
+        return_timestamps: true,
+        /* чуть жёстче к тишине и зацикленным галлюцинациям */
+        no_speech_threshold: 0.65,
+        compression_ratio_threshold: 2.2,
+        logprob_threshold: -0.8,
+        condition_on_previous_text: false,
       };
       if (lang !== 'null') {
         opts.language = lang; opts.task = 'transcribe';
