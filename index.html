@@ -1128,6 +1128,13 @@
     margin-bottom: 12px;
   }
 
+  .output-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
   .copy-btn {
     appearance: none;
     border: 1px solid rgba(75,48,28,0.22);
@@ -1142,7 +1149,15 @@
     color: var(--burgundy);
     cursor: pointer;
   }
+  .copy-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
   .copy-btn.copied { color: #2f7a3e; border-color: #2f7a3e; }
+  .copy-btn.improve-busy {
+    opacity: 0.7;
+    pointer-events: none;
+  }
 
   .transcript {
     background: rgba(255,255,255,0.35);
@@ -1612,7 +1627,10 @@
       <div class="result-sheet-inner">
         <div class="output-head">
           <div class="result-label" style="margin:0" data-i18n="result">Результат</div>
-          <button class="copy-btn" id="copyBtn" type="button" onclick="copyText()" data-i18n="copy">Копировать</button>
+          <div class="output-actions">
+            <button class="copy-btn" id="improveBtn" type="button" style="display:none" onclick="improveWithLlm()" data-i18n="improve" disabled>Улучшить</button>
+            <button class="copy-btn" id="copyBtn" type="button" onclick="copyText()" data-i18n="copy">Копировать</button>
+          </div>
         </div>
         <div class="transcript" id="transcriptBox"></div>
         <div class="translate-block" id="translateBlock">
@@ -1739,6 +1757,11 @@
       howNote: 'Твой голос = Твой текст',
       progress: 'Прогресс', result: 'Результат',
       copy: 'Копировать', copied: 'Скопировано ✓',
+      improve: 'Улучшить',
+      improveBusy: 'Улучшаю…',
+      improveNeedGpu: 'Улучшить (нужен WebGPU)',
+      logWhisperUnload: '♻ Whisper выгружен из RAM',
+      logMobileLocalOnly: '✓ Мобильный режим — текст без LLM (можно «Улучшить»)',
       translateEn: 'Перевод на английский',
       foot: 'Шептун крадёт аудио прямо в браузер — и никуда дальше не отпускает.',
       logWhisperCached: '✓ Whisper уже загружен',
@@ -1798,6 +1821,11 @@
       howNote: 'Your voice = Your text',
       progress: 'Progress', result: 'Result',
       copy: 'Copy', copied: 'Copied ✓',
+      improve: 'Improve',
+      improveBusy: 'Improving…',
+      improveNeedGpu: 'Improve (needs WebGPU)',
+      logWhisperUnload: '♻ Whisper unloaded from RAM',
+      logMobileLocalOnly: '✓ Mobile mode — text without LLM (use Improve)',
       translateEn: 'Translate to English',
       foot: 'Sheptun takes audio into the browser — and never lets it leave.',
       logWhisperCached: '✓ Whisper already loaded',
@@ -2186,6 +2214,10 @@
     'Xenova/whisper-base',
     'Xenova/whisper-tiny',
   ];
+  const LS_MODEL = 'sheptun-model';
+  const LS_OOM = 'sheptun-oom';
+  const LS_WHISPER_LOADING = 'sheptun-whisper-loading';
+
   let selectedModel = null;
   let selectedStyle = 'clean';
   let selectedCefr = 'B1';
@@ -2208,23 +2240,86 @@
     'Phi-3.5-mini-instruct-q4f16_1-MLC',
   ];
 
+  /* если вкладку убили во время load Whisper — при следующем визите OOM-флаг */
+  try {
+    if (localStorage.getItem(LS_WHISPER_LOADING) === '1') {
+      localStorage.setItem(LS_OOM, '1');
+    }
+    localStorage.removeItem(LS_WHISPER_LOADING);
+  } catch { /* ignore */ }
+
+  function isMobileClient() {
+    const ua = navigator.userAgent || '';
+    if (/Android|iPhone|iPod|Mobile/i.test(ua)) return true;
+    if (/iPad/i.test(ua)) return true;
+    /* iPadOS desktop UA */
+    if (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1) return true;
+    return false;
+  }
+
+  function markWhisperLoadStart() {
+    try { localStorage.setItem(LS_WHISPER_LOADING, '1'); } catch { /* ignore */ }
+  }
+
+  function markWhisperLoadEnd() {
+    try { localStorage.removeItem(LS_WHISPER_LOADING); } catch { /* ignore */ }
+  }
+
+  function unloadWhisper() {
+    if (!transcriber) return;
+    try {
+      if (typeof transcriber.dispose === 'function') transcriber.dispose();
+    } catch { /* ignore */ }
+    transcriber = null;
+  }
+
   async function pickBestModel() {
     const mem = navigator.deviceMemory;
     const cores = navigator.hardwareConcurrency || 4;
     const webgpu = await hasWebGPU();
-    /* по умолчанию самая мощная бесплатная (small); слабее — только на совсем слабом ПК */
+    const saved = localStorage.getItem(LS_MODEL);
+    let oom = false;
+    try { oom = localStorage.getItem(LS_OOM) === '1'; } catch { /* ignore */ }
+
+    /* mobile: base → tiny; никогда small; после crash — сразу tiny */
+    if (isMobileClient()) {
+      if (oom) return 'Xenova/whisper-tiny';
+      if (saved === 'Xenova/whisper-tiny' || saved === 'Xenova/whisper-base') return saved;
+      return 'Xenova/whisper-base';
+    }
+
+    /* desktop: предпочитаем small */
     let best = 'Xenova/whisper-small';
     if (!webgpu && mem != null && mem < 4 && cores < 4) best = 'Xenova/whisper-tiny';
     else if (!webgpu && mem != null && mem < 4) best = 'Xenova/whisper-base';
 
-    const saved = localStorage.getItem('sheptun-model');
     if (saved && MODEL_CANDIDATES.includes(saved)) {
-      /* не даём старому tiny/base навсегда блокировать small */
       const si = MODEL_CANDIDATES.indexOf(saved);
       const bi = MODEL_CANDIDATES.indexOf(best);
       return si <= bi ? saved : best;
     }
     return best;
+  }
+
+  function localOnlyText(raw, lang) {
+    const L = lang === 'null' ? 'ru' : lang;
+    if (selectedStyle === 'notes') return heuristicNotes(cleanTranscript(raw, L));
+    return localPostProcess(raw, lang, { hint: false });
+  }
+
+  async function syncImproveButton() {
+    const btn = document.getElementById('improveBtn');
+    if (!btn) return;
+    if (!isMobileClient() || !rawTextCache) {
+      btn.style.display = 'none';
+      btn.disabled = true;
+      return;
+    }
+    btn.style.display = '';
+    const ok = await hasWebGPU();
+    btn.disabled = !ok;
+    btn.textContent = ok ? t('improve') : t('improveNeedGpu');
+    btn.title = ok ? '' : t('improveNeedGpu');
   }
 
   function shortModelName(id) {
@@ -2591,10 +2686,12 @@
     if (!selectedModel) selectedModel = await pickBestModel();
 
     const startIdx = Math.max(0, MODEL_CANDIDATES.indexOf(selectedModel));
-    const order = MODEL_CANDIDATES.slice(startIdx); // только деградация: small → base → tiny
+    /* деградация вниз по списку: small→base→tiny или base→tiny */
+    const order = MODEL_CANDIDATES.slice(startIdx);
 
-    const preferGpu = await hasWebGPU();
+    const preferGpu = await hasWebGPU() && !isMobileClient();
     let lastErr = null;
+    markWhisperLoadStart();
 
     for (const modelId of order) {
       selectedModel = modelId;
@@ -2614,16 +2711,23 @@
       try {
         const loaded = await tryLoadModel(modelId, opts, preferGpu);
         transcriber = loaded.transcriber;
-        localStorage.setItem('sheptun-model', modelId);
+        localStorage.setItem(LS_MODEL, modelId);
+        markWhisperLoadEnd();
         log(t('logWhisperOk', short, loaded.backend), 'done');
         return;
       } catch (e) {
         lastErr = e;
         transcriber = null;
-        localStorage.removeItem('sheptun-model');
+        localStorage.removeItem(LS_MODEL);
+        /* soft-fail на mobile → запомним более лёгкую следующую */
+        if (isMobileClient() && modelId === 'Xenova/whisper-base') {
+          try { localStorage.setItem(LS_MODEL, 'Xenova/whisper-tiny'); } catch { /* ignore */ }
+        }
         log(t('logWhisperFallback', short), 'error');
       }
     }
+    markWhisperLoadEnd();
+    try { localStorage.setItem(LS_OOM, '1'); } catch { /* ignore */ }
     throw lastErr || new Error(t('errWhisperFail'));
   }
 
@@ -2635,24 +2739,30 @@
     const translateOn = document.getElementById('translateToggle').checked;
     if (translateOn) setCefrLoading(true);
     try {
-      let finalText = paragraphize(cleanTranscript(rawTextCache, lang === 'null' ? 'ru' : lang));
-      const useLLM = translateOn || needsLLM() || selectedStyle === 'clean';
-      if (useLLM) {
-        if (await hasWebGPU()) {
-          try { finalText = await rewriteWithLLM(rawTextCache, lang); }
-          catch (e) {
-            console.warn(e);
-            /* мета/сжатие — лучше исходник, чем мусорный комментарий */
-            finalText = localPostProcess(rawTextCache, lang, { hint: false });
+      let finalText;
+      /* mobile: только локально; LLM — кнопка «Улучшить» */
+      if (isMobileClient()) {
+        finalText = localOnlyText(rawTextCache, lang);
+      } else {
+        finalText = paragraphize(cleanTranscript(rawTextCache, lang === 'null' ? 'ru' : lang));
+        const useLLM = translateOn || needsLLM() || selectedStyle === 'clean';
+        if (useLLM) {
+          if (await hasWebGPU()) {
+            try { finalText = await rewriteWithLLM(rawTextCache, lang); }
+            catch (e) {
+              console.warn(e);
+              finalText = localPostProcess(rawTextCache, lang, { hint: false });
+            }
+          } else {
+            finalText = localPostProcess(rawTextCache, lang);
           }
-        } else {
-          finalText = localPostProcess(rawTextCache, lang);
+        } else if (selectedStyle === 'notes') {
+          finalText = heuristicNotes(cleanTranscript(rawTextCache, lang === 'null' ? 'ru' : lang));
         }
-      } else if (selectedStyle === 'notes') {
-        finalText = heuristicNotes(cleanTranscript(rawTextCache, lang === 'null' ? 'ru' : lang));
       }
       finalTextCache = finalText.trim();
       transcriptBox.textContent = finalTextCache || t('logEmpty');
+      await syncImproveButton();
     } finally {
       postBusy = false;
       setCefrLoading(false);
@@ -2848,23 +2958,34 @@
       if (!raw) throw new Error(t('errEmptyResult'));
       log(t('logTranscriptReady'), 'done');
 
-      let finalText = paragraphize(cleanTranscript(raw, lang === 'null' ? 'ru' : lang));
-      const translateOn = document.getElementById('translateToggle').checked;
-      const useLLM = translateOn || needsLLM() || selectedStyle === 'clean';
+      const mobile = isMobileClient();
+      let finalText;
 
-      if (useLLM) {
-        if (await hasWebGPU()) {
-          try { finalText = await rewriteWithLLM(raw, lang); log(t('logLlmReady'), 'done'); }
-          catch (e) {
-            log('⚠ LLM: ' + e.message, 'error');
-            finalText = localPostProcess(raw, lang, { hint: false });
+      if (mobile) {
+        /* RAM: выгрузить Whisper до любого LLM; диск-кэш не трогаем */
+        unloadWhisper();
+        log(t('logWhisperUnload'), 'done');
+        finalText = localOnlyText(raw, lang);
+        log(t('logMobileLocalOnly'), 'done');
+      } else {
+        finalText = paragraphize(cleanTranscript(raw, lang === 'null' ? 'ru' : lang));
+        const translateOn = document.getElementById('translateToggle').checked;
+        const useLLM = translateOn || needsLLM() || selectedStyle === 'clean';
+
+        if (useLLM) {
+          if (await hasWebGPU()) {
+            try { finalText = await rewriteWithLLM(raw, lang); log(t('logLlmReady'), 'done'); }
+            catch (e) {
+              log('⚠ LLM: ' + e.message, 'error');
+              finalText = localPostProcess(raw, lang, { hint: false });
+            }
+          } else {
+            log(t('logNoWebgpuFallback'), 'error');
+            finalText = localPostProcess(raw, lang);
           }
-        } else {
-          log(t('logNoWebgpuFallback'), 'error');
-          finalText = localPostProcess(raw, lang);
+        } else if (selectedStyle === 'notes') {
+          finalText = heuristicNotes(cleanTranscript(raw, lang === 'null' ? 'ru' : lang));
         }
-      } else if (selectedStyle === 'notes') {
-        finalText = heuristicNotes(cleanTranscript(raw, lang === 'null' ? 'ru' : lang));
       }
 
       finalTextCache = finalText.trim();
@@ -2872,12 +2993,50 @@
       log(t('logDone'), 'done');
       transcriptBox.textContent = finalTextCache || t('logEmpty');
       outputArea.style.display = 'block';
+      await syncImproveButton();
     } catch (err) {
+      markWhisperLoadEnd();
       log('✗ ' + err.message, 'error');
       console.error(err);
     } finally {
       setRunLoading(false);
       updateRunEnabled();
+    }
+  };
+
+  window.improveWithLlm = async function () {
+    if (!isMobileClient() || !rawTextCache || postBusy) return;
+    if (!(await hasWebGPU())) {
+      await syncImproveButton();
+      return;
+    }
+    const btn = document.getElementById('improveBtn');
+    const transcriptBox = document.getElementById('transcriptBox');
+    const progressArea = document.getElementById('progressArea');
+    postBusy = true;
+    if (btn) {
+      btn.classList.add('improve-busy');
+      btn.textContent = t('improveBusy');
+      btn.disabled = true;
+    }
+    progressArea.style.display = 'block';
+    try {
+      unloadWhisper();
+      log(t('logEdit'), 'active');
+      const improved = await rewriteWithLLM(rawTextCache, lastLang);
+      finalTextCache = (improved || '').trim();
+      transcriptBox.textContent = finalTextCache || t('logEmpty');
+      log(t('logLlmReady'), 'done');
+      setProgress(100);
+    } catch (e) {
+      log('⚠ LLM: ' + e.message, 'error');
+      console.warn(e);
+    } finally {
+      postBusy = false;
+      if (btn) {
+        btn.classList.remove('improve-busy');
+        await syncImproveButton();
+      }
     }
   };
 
